@@ -140,10 +140,19 @@
 <script>
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
 
-let pubData, reviewer='Squeak', selectedPub=null;
+let pubData, selectedPub=null;
 
+// Load saved reviewer from localStorage or default to Squeak
+let reviewer = localStorage.getItem('selectedReviewer') || 'Squeak';
+document.getElementById(reviewer.toLowerCase()).checked = true;
+
+// Update event listener to save selection
 document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
-  r.addEventListener('change', ()=>{ reviewer=r.value; renderPubCards(); });
+  r.addEventListener('change', ()=>{
+    reviewer = r.value;
+    localStorage.setItem('selectedReviewer', reviewer); // save selection
+    renderPubCards();
+  });
 });
 
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
