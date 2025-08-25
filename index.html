@@ -1,274 +1,389 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nottingham Pub Ratings</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-    margin: 0; padding: 0;
-    background-color: #F5F5F5;
-    overflow-x: hidden;
-  }
-  .reviewer-toggle { margin: 20px; display:flex; justify-content:center; }
-  .toggle-switch {
-    position: relative;
-    width: 200px; height: 40px;
-    background-color: #ddd; border-radius: 20px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 5px;
-  }
-  .toggle-switch input { display: none; }
-  .toggle-switch label {
-    flex: 1; text-align: center; cursor: pointer;
-    font-weight: bold; line-height: 40px; color: #000; transition: color 0.3s;
-  }
-  input#squeak:checked + label[for="squeak"] { color: white; }
-  input#connor:checked + label[for="connor"] { color: white; }
-  .toggle-switch .slider {
-    position: absolute; top:0; left:0; width:50%; height:100%;
-    border-radius: 20px; transition: 0.3s; z-index:1;
-    background-color: #004080;
-  }
-  input#connor:checked ~ .slider { background-color:#800000; left:50%; }
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Nottingham Pub Ratings</title>
+    <style>
+      body { 
+        font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+        margin: 0; 
+        background-color: #F5F5F5; 
+        overflow: hidden; 
+        height: 100vh;
+      }
 
-  #pubList {
-    padding: 20px; box-sizing: border-box;
-  }
-  .pub-card {
-    border-radius: 10px; padding: 15px; margin-bottom: 10px;
-    cursor: pointer; transition: all 0.2s; border: 2px solid #ccc;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
-  }
-  .pub-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-  .pub-card.selected { border-width:3px; }
-  .pub-card.squeak { background-color:#D0E4FF; border-color:#004080; }
-  .pub-card.connor { background-color:#FFD0D0; border-color:#800000; }
-  .reviewed-badge {
-    position: absolute; top:8px; right:10px; background:green;
-    color:white; font-size:12px; padding:2px 6px; border-radius:10px;
-  }
-  .score-line { margin-top:6px; font-weight:600; }
+      #pubList {
+        overflow-y: auto;
+        height: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+      }
 
-  .questions-container {
-    margin-top:10px; padding:12px 16px; border-radius:10px;
-  }
-  .question { margin:12px 0; }
-  .question label { display:block; margin-bottom:6px; font-weight:500; }
-  .question input[type=range] {
-    width: 90%; height: 8px; border-radius:5px; background:#ccc; appearance:none;
-  }
-  .question input[type=range]::-webkit-slider-thumb {
-    appearance:none; width:20px; height:20px; border-radius:50%; background:#004080; cursor:pointer;
-  }
-  .question input[type=text], .question textarea {
-    width:90%; padding:10px 12px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:vertical;
-  }
-  .question textarea { min-height:72px; }
-  .value-badge { margin-left:10px; font-weight:600; }
+      /* Reviewer toggle */
+      .reviewer-toggle { margin-bottom: 20px; display:flex; justify-content:center; }
+      .toggle-switch {
+        position: relative;
+        width: 200px;
+        height: 40px;
+        background-color: #ddd;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 5px;
+      }
+      .toggle-switch input { display: none; }
+      .toggle-switch label {
+        flex: 1;
+        text-align: center;
+        cursor: pointer;
+        z-index: 3; /* above slider */
+        font-weight: bold;
+        line-height: 40px;
+        color: #fff; /* visible text */
+        transition: color 0.3s;
+        user-select: none;
+      }
 
-  .submit-btn { padding:10px 20px; font-size:16px; cursor:pointer; border-radius:5px; border:none; margin-top:10px; }
-  .submit-btn.squeak { background-color:#004080; color:white; }
-  .submit-btn.connor { background-color:#800000; color:white; }
+      .toggle-switch .slider {
+        position: absolute;
+        top: 0; left: 0;
+        width: 50%;
+        height: 100%;
+        border-radius: 20px;
+        transition: 0.3s;
+        z-index: 2; /* behind labels */
+        background-color: #004080; 
+      }
+      input#connor:checked ~ .slider { background-color: #800000; left: 50%; }
 
-  .saved-message { margin-top:10px; font-weight:bold; color:green; opacity:0; transition:opacity 0.5s; }
+      /* Pub cards */
+      .pub-card { 
+        border-radius: 10px; padding: 15px; margin-bottom: 10px; 
+        cursor: pointer; transition: all 0.2s; border: 2px solid #ccc;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        position: relative;
+        background-color: #fff;
+      }
+      .pub-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+      .pub-card.selected { border-width: 3px; }
 
-  #leaderboardBtn {
-    position: fixed; bottom:20px; right:20px;
-    background:#333; color:white; border:none; border-radius:50%;
-    width:56px; height:56px; font-size:22px;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 4px 6px rgba(0,0,0,0.2); cursor:pointer; z-index:1000;
-  }
-  #leaderboardBtn:hover { background:#555; }
-  .modal {
-    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:1000;
-  }
-  .modal-content {
-    background:white; padding:20px; border-radius:12px;
-    width:90%; max-width:400px; max-height:80%; overflow-y:auto;
-  }
-  .leaderboard-item {
-    display:flex; justify-content:space-between; padding:8px 12px; border-radius:6px; margin-bottom:6px;
-  }
-  .gold { background:#FFD700; }
-  .silver { background:#C0C0C0; }
-  .bronze { background:#CD7F32; }
-  .others { background:#eee; }
+      .pub-card.squeak { border-color: #004080; }
+      .pub-card.connor { border-color: #800000; }
 
-  @media(max-width:480px) {
-    .toggle-switch { width:160px; height:35px; }
-    .toggle-switch label { line-height:35px; font-size:14px; }
-    .submit-btn { font-size:14px; padding:8px 16px; }
-  }
-</style>
-</head>
-<body>
+      .reviewed-badge {
+        position: absolute; top: 8px; right: 10px; background: green;
+        color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px;
+      }
 
-<div class="reviewer-toggle">
-  <div class="toggle-switch">
-    <input type="radio" id="squeak" name="reviewer" value="Squeak" checked>
-    <label for="squeak">Squeak</label>
-    <input type="radio" id="connor" name="reviewer" value="Connor">
-    <label for="connor">Connor</label>
-    <div class="slider"></div>
-  </div>
-</div>
+      .score-line {
+        margin-top: 6px;
+        font-weight: 600;
+      }
 
-<div id="pubList"></div>
+      /* Questions container */
+      .questions-container { 
+        margin-top: 10px; 
+        padding: 12px 16px;
+        background: transparent; 
+        border-radius: 10px; 
+      }
 
-<button id="leaderboardBtn">🏆</button>
-<div id="leaderboardModal" class="modal">
-  <div class="modal-content">
-    <span class="close" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
-    <h2>Leaderboard</h2>
-    <div id="leaderboardList"></div>
-  </div>
-</div>
+      .question { margin: 12px 0; }
+      .question label { display: block; margin-bottom: 6px; font-weight: 500; }
+      .question input[type=range] {
+        width: 90%; 
+        height: 8px; 
+        border-radius: 5px;
+        background: #ccc;
+        appearance: none;
+      }
+      .question input[type=range]::-webkit-slider-thumb {
+        appearance: none; width: 20px; height: 20px; border-radius: 50%;
+        background: #004080; cursor: pointer; transition: 0.3s;
+      }
+      input:focus, textarea:focus { outline: none; box-shadow: 0 0 3px #004080; }
+      .question input[type=text], .question textarea {
+        width: 90%; box-sizing: border-box; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc;
+        font-size: 14px; transition: 0.2s; resize: vertical;
+        background: #fff;
+      }
+      .question textarea { min-height: 72px; }
 
-<script>
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
+      .value-badge { margin-left: 10px; font-weight: 600; }
 
-let pubData, reviewer='Squeak', selectedPub=null;
+      .submit-btn { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; margin-top: 10px; transition: 0.2s; }
+      .submit-btn.squeak { background-color: #004080; color: white; }
+      .submit-btn.squeak:hover { background-color: #0066cc; }
+      .submit-btn.connor { background-color: #800000; color: white; }
+      .submit-btn.connor:hover { background-color: #b30000; }
 
-document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
-  r.addEventListener('change', ()=>{ reviewer=r.value; renderPubCards(); });
-});
+      .saved-message { margin-top: 10px; font-weight: bold; color: green; opacity: 0; transition: opacity 0.5s; }
 
-document.getElementById('leaderboardBtn').onclick = showLeaderboard;
-document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
+      /* Leaderboard styles */
+      #leaderboardBtn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        cursor: pointer;
+        z-index: 1000;
+        transition: background 0.3s ease;
+      }
+      #leaderboardBtn:hover { background: #555; }
 
-async function fetchData(){
-  try{
-    const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
-    pubData = await res.json();
-    renderPubCards();
-  } catch(e){ console.error(e); }
-}
+      .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 80%;
+        overflow-y: auto;
+      }
+      .leaderboard-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        color: black;
+        font-weight: 500;
+      }
+      .leaderboard-item.gold { background-color: #FFD700; }
+      .leaderboard-item.silver { background-color: #C0C0C0; }
+      .leaderboard-item.bronze { background-color: #CD7F32; }
+      .leaderboard-item.others { background-color: #eee; }
+      .modal {
+        display: none;
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.4); 
+        align-items: center; 
+        justify-content: center; 
+        z-index: 1000;
+      }
 
-function renderPubCards(){
-  const container = document.getElementById('pubList');
-  container.innerHTML='';
-  pubData.pubs.forEach((p, i)=>{
-    const card = document.createElement('div');
-    card.className='pub-card '+reviewer.toLowerCase();
-    card.textContent=p;
+      @media(max-width:480px) {
+        .toggle-switch { width: 160px; height: 35px; }
+        .toggle-switch label { line-height: 35px; font-size: 14px; }
+        .pub-card { padding: 12px; }
+        .submit-btn { font-size: 14px; padding: 8px 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Reviewer toggle -->
+    <div class="reviewer-toggle">
+      <div class="toggle-switch">
+        <input type="radio" id="squeak" name="reviewer" value="Squeak" checked onchange="changeReviewer()">
+        <label for="squeak">Squeak</label>
+        <input type="radio" id="connor" name="reviewer" value="Connor" onchange="changeReviewer()">
+        <label for="connor">Connor</label>
+        <div class="slider"></div>
+      </div>
+    </div>
 
-    const answers = pubData.data[i]||[];
-    let hasReview = answers.some((a,j)=>(pubData.reviewers[j]||'').toLowerCase()===reviewer.toLowerCase() && a!='' && a!=null);
-    if(hasReview){
-      const badge = document.createElement('div');
-      badge.className='reviewed-badge';
-      badge.textContent='Reviewed';
-      card.appendChild(badge);
-    }
+    <!-- Pub cards -->
+    <div id="pubList"></div>
 
-    const yourScore = calcReviewerScore(i, reviewer);
-    const avgScore = calcAverageScore(i);
-    if(yourScore!=null || avgScore!=null){
-      const scoreDiv=document.createElement('div');
-      scoreDiv.className='score-line';
-      scoreDiv.textContent = (yourScore!=null?`Your Score: ${yourScore}`:'')+(yourScore!=null && avgScore!=null?' | ':'')+(avgScore!=null?`Avg: ${avgScore}`:'');
-      card.appendChild(scoreDiv);
-    }
+    <!-- Floating Leaderboard -->
+    <button id="leaderboardBtn" onclick="showLeaderboard()">🏆</button>
+    <div id="leaderboardModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeLeaderboard()" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+        <h2>Leaderboard</h2>
+        <div id="leaderboardList"></div>
+      </div>
+    </div>
 
-    card.onclick = ()=>{ selectedPub=(selectedPub===i?null:i); renderPubCards(); showQuestions(i, card); };
+    <script>
+      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
 
-    container.appendChild(card);
-  });
-}
+      let pubData, selectedPub = null, reviewer = 'Squeak';
 
-function calcReviewerScore(pubIndex, reviewerName){
-  const row = pubData.data[pubIndex];
-  if(!row) return null;
-  let total=0, weightSum=0;
-  for(let i=0;i<pubData.labels.length;i++){
-    if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
-    const weight=parseFloat(pubData.weightings[i]);
-    if(!isFinite(weight) || weight<=0) continue;
-    const val=row[i], num=parseFloat(val);
-    if(!isNaN(num)){ total+=num*weight; weightSum+=weight; }
-  }
-  if(weightSum<=0) return null;
-  return +(total/weightSum).toFixed(2);
-}
+      async function init() {
+        pubData = await fetchPubData();
+        renderPubCards();
+      }
 
-function calcAverageScore(pubIndex){
-  const uniqueReviewers=Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
-  const scores=uniqueReviewers.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!=null && !isNaN(s));
-  if(!scores.length) return null;
-  return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
-}
+      async function fetchPubData() {
+        const resp = await fetch(WEB_APP_URL + '?action=getPubData');
+        return await resp.json();
+      }
 
-function showQuestions(pubIndex, cardElement){
-  if(selectedPub!==pubIndex) return;
-  const container = document.createElement('div');
-  container.className='questions-container';
-  container.addEventListener('click', e=>e.stopPropagation());
+      async function savePubRating(pubName, reviewer, answers) {
+        await fetch(WEB_APP_URL + '?action=savePubRating', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({pubName, reviewer, answers})
+        });
+        pubData = await fetchPubData();
+        renderPubCards();
+      }
 
-  const answers = pubData.data[pubIndex]||[];
-  pubData.labels.forEach((label,i)=>{
-    if((pubData.reviewers[i]||'').toLowerCase()!==reviewer.toLowerCase()) return;
-    const qDiv=document.createElement('div'); qDiv.className='question';
-    const qLabel=document.createElement('label'); qLabel.textContent=label; qDiv.appendChild(qLabel);
-    const type=(pubData.types[i]||'').toString().trim();
-    let input;
-    if(type.startsWith('slider')){
-      let min=1,max=5; 
-      if(type.includes('_')){ const [,mm]=type.split('_'); if(mm && mm.includes('-')){ const parts=mm.split('-').map(Number); if(isFinite(parts[0])) min=parts[0]; if(isFinite(parts[1])) max=parts[1]; }}
-      input=document.createElement('input'); input.type='range'; input.min=min; input.max=max; input.step=1; input.value=answers[i]||min;
-      const valSpan=document.createElement('span'); valSpan.className='value-badge'; valSpan.textContent=input.value;
-      input.oninput=()=>{ valSpan.textContent=input.value; };
-      qDiv.appendChild(input); qDiv.appendChild(valSpan);
-    } else if(type==='multi_line_text'){ input=document.createElement('textarea'); input.value=answers[i]||''; qDiv.appendChild(input); }
-    else { input=document.createElement('input'); input.type='text'; input.value=answers[i]||''; qDiv.appendChild(input); }
-    input.dataset.index=i;
-    container.appendChild(qDiv);
-  });
+      function changeReviewer() {
+        reviewer = document.querySelector('input[name="reviewer"]:checked').value;
+        renderPubCards();
+      }
 
-  const submitBtn=document.createElement('button'); submitBtn.className='submit-btn '+reviewer.toLowerCase(); submitBtn.textContent='Submit';
-  submitBtn.onclick=saveAnswers;
-  container.appendChild(submitBtn);
+      function selectPub(index) {
+        selectedPub = (selectedPub === index) ? null : index;
+        renderPubCards();
+        const card = document.querySelectorAll('.pub-card')[selectedPub];
+        if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+      }
 
-  const msg=document.createElement('div'); msg.className='saved-message'; msg.textContent='Saved ✅';
-  container.appendChild(msg);
+      function calcReviewerScore(pubIndex, reviewerName) {
+        const row = pubData.data[pubIndex];
+        if(!row) return null;
+        let total=0, weightSum=0;
+        for(let i=0;i<pubData.labels.length;i++){
+          if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
+          const weight=parseFloat(pubData.weightings[i]);
+          if(!isFinite(weight) || weight<=0) continue;
+          const num=parseFloat(row[i]);
+          if(!isNaN(num)){ total+=num*weight; weightSum+=weight; }
+        }
+        return weightSum>0 ? +(total/weightSum).toFixed(2) : null;
+      }
 
-  cardElement.appendChild(container);
-  cardElement.classList.add('selected');
-}
+      function calcAverageScore(pubIndex){
+        const unique = Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
+        const scores = unique.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!==null && !isNaN(s));
+        if(!scores.length) return null;
+        return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
+      }
 
-async function saveAnswers(){
-  const inputs=document.querySelectorAll('.questions-container input, .questions-container textarea');
-  const answers=[];
-  inputs.forEach(input=>{ answers[input.dataset.index]=input.value; });
-  const msg=document.querySelector('.saved-message');
-  try{
-    await fetch(`${WEB_APP_URL}?action=savePubRating`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({pubName: pubData.pubs[selectedPub], reviewer, answers})
-    });
-    msg.style.opacity=1;
-    setTimeout(()=>{ msg.style.opacity=0; fetchData(); }, 1500);
-  } catch(e){ console.error(e); }
-}
+      function renderPubCards(){
+        const container = document.getElementById('pubList');
+        container.innerHTML='';
+        pubData.pubs.forEach((name,index)=>{
+          const card = document.createElement('div');
+          card.className='pub-card '+reviewer.toLowerCase();
+          card.textContent=name;
 
-function showLeaderboard(){
-  const pubsArray=pubData.pubs.map((p,i)=>({name:p, avg:calcAverageScore(i)})).filter(p=>p.avg!=null);
-  pubsArray.sort((a,b)=>b.avg-a.avg);
-  const list=document.getElementById('leaderboardList'); list.innerHTML='';
-  pubsArray.forEach((p,idx)=>{
-    const div=document.createElement('div'); div.className='leaderboard-item';
-    if(idx===0) div.classList.add('gold'); else if(idx===1) div.classList.add('silver'); else if(idx===2) div.classList.add('bronze'); else div.classList.add('others');
-    div.innerHTML=`<span>${idx+1}. ${p.name}</span><span>${p.avg.toFixed(2)}</span>`;
-    list.appendChild(div);
-  });
-  document.getElementById('leaderboardModal').style.display='flex';
-}
+          const answers = pubData.data[index]||[];
+          let hasReview = answers.some((a,i)=>(pubData.reviewers[i]||'').toLowerCase()===reviewer.toLowerCase() && a!=='');
+          if(hasReview){
+            const badge = document.createElement('div');
+            badge.className='reviewed-badge'; badge.textContent='Reviewed';
+            card.appendChild(badge);
+          }
 
-fetchData();
-</script>
-</body>
+          const yourScore=calcReviewerScore(index,reviewer);
+          const avgScore=calcAverageScore(index);
+          if(yourScore!==null || avgScore!==null){
+            const scoreDiv=document.createElement('div');
+            scoreDiv.className='score-line';
+            scoreDiv.textContent=(yourScore!==null?`Your Score: ${yourScore}`:'')+
+                                 (yourScore!==null && avgScore!==null?' | ':'')+
+                                 (avgScore!==null?`Avg: ${avgScore}`:'');
+            card.appendChild(scoreDiv);
+          }
+
+          card.onclick=()=>showQuestionsInside(card,index);
+          container.appendChild(card);
+        });
+      }
+
+      function showQuestionsInside(card,index){
+        selectedPub=index;
+        const container=document.createElement('div');
+        container.className='questions-container';
+        container.addEventListener('click',e=>e.stopPropagation());
+
+        const answers=pubData.data[index]||[];
+        const labels=pubData.labels;
+        const types=pubData.types;
+        const reviewers=pubData.reviewers;
+
+        labels.forEach((label,i)=>{
+          if((reviewers[i]||'').toLowerCase()!==reviewer.toLowerCase()) return;
+          const qDiv=document.createElement('div'); qDiv.className='question';
+          const qLabel=document.createElement('label'); qLabel.textContent=label; qDiv.appendChild(qLabel);
+
+          const inputType=(types[i]||'').toString().trim();
+          let input;
+
+          if(inputType.startsWith('slider')){
+            let min=1,max=5;
+            if(inputType.includes('_')){
+              const [,mm]=inputType.split('_');
+              if(mm && mm.includes('-')){
+                const parts=mm.split('-').map(Number);
+                if(isFinite(parts[0])) min=parts[0];
+                if(isFinite(parts[1])) max=parts[1];
+              }
+            }
+            input=document.createElement('input'); input.type='range';
+            input.min=min; input.max=max; input.step=1;
+            input.value=(answers[i]!=='')?answers[i]:min;
+            const valSpan=document.createElement('span'); valSpan.className='value-badge'; valSpan.textContent=input.value;
+            input.oninput=()=>valSpan.textContent=input.value;
+            qDiv.appendChild(input); qDiv.appendChild(valSpan);
+          } else if(inputType==='multi_line_text'){
+            input=document.createElement('textarea'); input.rows=4; input.value=answers[i]||''; qDiv.appendChild(input);
+          } else {
+            input=document.createElement('input'); input.type='text'; input.value=answers[i]||''; qDiv.appendChild(input);
+          }
+
+          input.dataset.index=i; container.appendChild(qDiv);
+        });
+
+        const submitBtn=document.createElement('button'); submitBtn.className='submit-btn '+reviewer.toLowerCase();
+        submitBtn.textContent='Submit'; submitBtn.onclick=async ()=>{
+          const inputs=container.querySelectorAll('input,textarea');
+          const ans=[]; inputs.forEach(inp=>{ ans[inp.dataset.index]=inp.value; });
+          await savePubRating(pubData.pubs[selectedPub], reviewer, ans);
+        };
+        container.appendChild(submitBtn);
+
+        card.innerHTML=''; card.appendChild(container); card.classList.add('selected');
+      }
+
+      function showLeaderboard(){
+        const pubsArray=pubData.pubs.map((p,i)=>({name:p,avg:calcAverageScore(i)})).filter(p=>p.avg!==null);
+        pubsArray.sort((a,b)=>b.avg-a.avg);
+        const list=document.getElementById('leaderboardList'); list.innerHTML='';
+        pubsArray.forEach((p,idx)=>{
+          const div=document.createElement('div'); div.className='leaderboard-item';
+          if(idx===0) div.classList.add('gold');
+          else if(idx===1) div.classList.add('silver');
+          else if(idx===2) div.classList.add('bronze');
+          else div.classList.add('others');
+          div.innerHTML=`<span>${idx+1}. ${p.name}</span><span>${p.avg.toFixed(2)}</span>`;
+          list.appendChild(div);
+        });
+        document.getElementById('leaderboardModal').style.display='flex';
+      }
+
+      function closeLeaderboard(){ document.getElementById('leaderboardModal').style.display='none'; }
+
+      // Click away to close
+      document.getElementById('leaderboardModal').addEventListener('click', e=>{
+        if(e.target===e.currentTarget) closeLeaderboard();
+      });
+
+      // Dynamic height
+      function adjustHeight(){
+        const h=window.innerHeight;
+        document.body.style.height=h+'px';
+        document.getElementById('pubList').style.height=h+'px';
+      }
+      window.addEventListener('load',()=>{ adjustHeight(); init(); });
+      window.addEventListener('resize',adjustHeight);
+    </script>
+  </body>
 </html>
