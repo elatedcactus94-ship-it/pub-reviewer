@@ -48,6 +48,7 @@ input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
 </style>
 </head>
 <body>
+
 <div class="reviewer-toggle">
   <div class="toggle-switch">
     <input type="radio" id="squeak" name="reviewer" value="Squeak" checked>
@@ -63,7 +64,7 @@ input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
 <button id="leaderboardBtn">🏆</button>
 
 <!-- leaderboard modal hidden by default -->
-<div id="leaderboardModal" class="modal">
+<div id="leaderboardModal" class="modal" style="display:none;">
   <div class="modal-content">
     <span class="close" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
     <h2>Leaderboard</h2>
@@ -88,14 +89,20 @@ document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
 
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
 document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
-document.getElementById('leaderboardModal').addEventListener('click', e=>{ if(e.target===this) this.style.display='none'; });
+
+// fix modal background click to close correctly
+document.getElementById('leaderboardModal').addEventListener('click', e => {
+  if(e.target === document.getElementById('leaderboardModal')) {
+    e.target.style.display = 'none';
+  }
+});
 
 async function fetchData(){
   try{
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
-    // leaderboard modal not touched here
+    // removed any line touching leaderboardModal here
   } catch(e){ console.error(e); }
 }
 
