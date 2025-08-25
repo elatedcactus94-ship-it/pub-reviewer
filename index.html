@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nottingham Pub Ratings</title>
 <style>
-  /* --- styles unchanged --- */
+  /* --- all styles unchanged --- */
   body {
     font-family: 'Segoe UI', Roboto, Arial, sans-serif;
     margin: 0; padding: 0;
@@ -64,6 +64,8 @@
   .questions-container {
     margin-top:10px; padding:12px 16px; border-radius:10px;
   }
+  /* Stop clicks inside questions container from triggering card click */
+  .questions-container * { pointer-events:auto; }
   .question { margin:12px 0; }
   .question label { display:block; margin-bottom:6px; font-weight:500; }
   .question input[type=range] {
@@ -150,7 +152,7 @@ document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
     reviewer = r.value;
     localStorage.setItem('selectedReviewer', reviewer);
     selectedPub = null;
-    renderPubCards(); // re-render cards without destroying questions
+    renderPubCards();
   });
 });
 
@@ -170,7 +172,7 @@ async function fetchData(){
 function renderPubCards(){
   const container = document.getElementById('pubList');
   container.innerHTML='';
-  pubData.pubs.forEach((p, i)=>{
+  pubData.pubs.forEach((p,i)=>{
     const card = document.createElement('div');
     card.className='pub-card '+reviewer.toLowerCase();
     card.textContent=p;
@@ -193,56 +195,23 @@ function renderPubCards(){
       card.appendChild(scoreDiv);
     }
 
-    card.onclick = ()=>{
-      if(selectedPub === i){
-        selectedPub = null;
-        // remove questions container
-        document.querySelectorAll('.questions-container').forEach(q=>q.remove());
-      } else {
-        selectedPub = i;
-        document.querySelectorAll('.questions-container').forEach(q=>q.remove());
-        showQuestions(i, card);
-      }
-      // toggle selected class
-      document.querySelectorAll('.pub-card').forEach((c,idx)=>{ 
-        if(idx===i && selectedPub!==null) c.classList.add('selected'); 
-        else c.classList.remove('selected');
-      });
+    // Stop clicks inside questions container from triggering card click
+    card.onclick = ()=>{ 
+      if(selectedPub===i) selectedPub=null; 
+      else selectedPub=i;
+      renderPubCards();
+      showQuestions(i, card);
     };
 
     container.appendChild(card);
   });
 }
 
-// ... calcReviewerScore, calcAverageScore, showQuestions, saveAnswers, showLeaderboard remain unchanged
-
-function calcReviewerScore(pubIndex, reviewerName){
-  const row = pubData.data[pubIndex];
-  if(!row) return null;
-  let total=0, weightSum=0;
-  for(let i=0;i<pubData.labels.length;i++){
-    if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
-    const weight=parseFloat(pubData.weightings[i]);
-    if(!isFinite(weight) || weight<=0) continue;
-    const val=row[i], num=parseFloat(val);
-    if(!isNaN(num)){ total+=num*weight; weightSum+=weight; }
-  }
-  if(weightSum<=0) return null;
-  return +(total/weightSum).toFixed(2);
-}
-
-function calcAverageScore(pubIndex){
-  const uniqueReviewers=Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
-  const scores=uniqueReviewers.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!=null && !isNaN(s));
-  if(!scores.length) return null;
-  return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
-}
-
 function showQuestions(pubIndex, cardElement){
   if(selectedPub!==pubIndex) return;
   const container = document.createElement('div');
   container.className='questions-container';
-  container.addEventListener('click', e=>e.stopPropagation());
+  container.addEventListener('click', e=>e.stopPropagation()); // <--- critical fix
 
   const answers = pubData.data[pubIndex]||[];
   pubData.labels.forEach((label,i)=>{
@@ -265,7 +234,7 @@ function showQuestions(pubIndex, cardElement){
   });
 
   const submitBtn=document.createElement('button'); submitBtn.className='submit-btn '+reviewer.toLowerCase(); submitBtn.textContent='Submit';
-  submitBtn.onclick=saveAnswers;
+  submitBtn.addEventListener('click', e=>{ e.stopPropagation(); saveAnswers(); }); // <--- stop propagation on submit
   container.appendChild(submitBtn);
 
   const msg=document.createElement('div'); msg.className='saved-message'; msg.textContent='Saved ✅';
@@ -289,6 +258,28 @@ async function saveAnswers(){
     msg.style.opacity=1;
     setTimeout(()=>{ msg.style.opacity=0; fetchData(); }, 1500);
   } catch(e){ console.error(e); }
+}
+
+function calcReviewerScore(pubIndex, reviewerName){
+  const row = pubData.data[pubIndex];
+  if(!row) return null;
+  let total=0, weightSum=0;
+  for(let i=0;i<pubData.labels.length;i++){
+    if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
+    const weight=parseFloat(pubData.weightings[i]);
+    if(!isFinite(weight) || weight<=0) continue;
+    const val=row[i], num=parseFloat(val);
+    if(!isNaN(num)){ total+=num*weight; weightSum+=weight; }
+  }
+  if(weightSum<=0) return null;
+  return +(total/weightSum).toFixed(2);
+}
+
+function calcAverageScore(pubIndex){
+  const uniqueReviewers=Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
+  const scores=uniqueReviewers.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!=null && !isNaN(s));
+  if(!scores.length) return null;
+  return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
 }
 
 function showLeaderboard(){
