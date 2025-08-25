@@ -23,14 +23,24 @@
   .toggle-switch label {
     flex: 1; text-align: center; cursor: pointer;
     font-weight: bold; line-height: 40px; color: #000; transition: color 0.3s;
-    position: relative; z-index: 2;
+    z-index: 1;
   }
+  input#squeak:checked + label[for="squeak"] { color: white; }
+  input#connor:checked + label[for="connor"] { color: white; }
   .toggle-switch .slider {
-    position: absolute; top:0; left:0; width:50%; height:100%;
-    border-radius: 20px; transition: 0.3s; z-index:1;
+    position: absolute;
+    top: 0; left: 0;
+    width: 48%;
+    height: 100%;
+    border-radius: 20px;
+    transition: 0.3s;
+    z-index: 0;
     background-color: #004080;
   }
-  input#connor:checked ~ .slider { background-color:#800000; left:50%; }
+  input#connor:checked ~ .slider {
+    background-color: #800000;
+    left: 52%;
+  }
 
   #pubList {
     padding: 20px; box-sizing: border-box;
@@ -108,7 +118,7 @@
 
 <div class="reviewer-toggle">
   <div class="toggle-switch">
-    <input type="radio" id="squeak" name="reviewer" value="Squeak">
+    <input type="radio" id="squeak" name="reviewer" value="Squeak" checked>
     <label for="squeak">Squeak</label>
     <input type="radio" id="connor" name="reviewer" value="Connor">
     <label for="connor">Connor</label>
@@ -130,38 +140,31 @@
 <script>
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
 
-let pubData, selectedPub=null;
-
-// Load saved reviewer or default to Squeak
-let reviewer = localStorage.getItem('selectedReviewer') || 'Squeak';
-document.getElementById(reviewer.toLowerCase()).checked = true;
+let pubData, reviewer='Squeak', selectedPub=null;
 
 document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
-  r.addEventListener('change', ()=>{
-    reviewer=r.value;
-    localStorage.setItem('selectedReviewer', reviewer);
-    renderPubCards();
-  });
+  r.addEventListener('change', ()=>{ reviewer=r.value; renderPubCards(); });
 });
 
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
 document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
-document.getElementById('leaderboardModal').onclick = (e)=>{
-  if(e.target===document.getElementById('leaderboardModal')){
-    document.getElementById('leaderboardModal').style.display='none';
-  }
-};
+
+// Click away to close leaderboard
+document.getElementById('leaderboardModal').addEventListener('click', function(e){
+  if(e.target === this) this.style.display='none';
+});
 
 async function fetchData(){
   try{
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
+    // Ensure leaderboard modal is hidden by default
+    document.getElementById('leaderboardModal').style.display='none';
   } catch(e){ console.error(e); }
 }
 
 function renderPubCards(){
-  if(!pubData) return;
   const container = document.getElementById('pubList');
   container.innerHTML='';
   pubData.pubs.forEach((p, i)=>{
