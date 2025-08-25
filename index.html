@@ -57,8 +57,12 @@ input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
     <div class="slider"></div>
   </div>
 </div>
+
 <div id="pubList"></div>
+
 <button id="leaderboardBtn">🏆</button>
+
+<!-- leaderboard modal hidden by default -->
 <div id="leaderboardModal" class="modal">
   <div class="modal-content">
     <span class="close" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
@@ -66,11 +70,13 @@ input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
     <div id="leaderboardList"></div>
   </div>
 </div>
+
 <script>
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
 let pubData, selectedPub=null;
 let reviewer = localStorage.getItem('selectedReviewer') || 'Squeak';
 document.getElementById(reviewer.toLowerCase()).checked = true;
+
 document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
   r.addEventListener('change', ()=>{
     reviewer = r.value;
@@ -79,6 +85,7 @@ document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
     renderPubCards();
   });
 });
+
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
 document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
 document.getElementById('leaderboardModal').addEventListener('click', e=>{ if(e.target===this) this.style.display='none'; });
@@ -88,7 +95,7 @@ async function fetchData(){
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
-    // Removed line that hid leaderboard initially
+    // leaderboard modal not touched here
   } catch(e){ console.error(e); }
 }
 
@@ -132,8 +139,6 @@ function renderPubCards(){
     container.appendChild(card);
   });
 }
-
-// calcReviewerScore, calcAverageScore, showQuestions, saveAnswers, showLeaderboard remain unchanged
 
 function calcReviewerScore(pubIndex, reviewerName){
   const row = pubData.data[pubIndex];
