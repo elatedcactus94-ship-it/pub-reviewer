@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nottingham Pub Ratings</title>
 <style>
+  /* --- styles unchanged --- */
   body {
     font-family: 'Segoe UI', Roboto, Arial, sans-serif;
     margin: 0; padding: 0;
@@ -141,35 +142,27 @@
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
 
 let pubData, selectedPub=null;
-
-// Load saved reviewer from localStorage or default to Squeak
 let reviewer = localStorage.getItem('selectedReviewer') || 'Squeak';
 document.getElementById(reviewer.toLowerCase()).checked = true;
 
-// Update event listener to save selection
 document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
   r.addEventListener('change', ()=>{
     reviewer = r.value;
-    localStorage.setItem('selectedReviewer', reviewer); // save selection
-    selectedPub = null; // deselect any selected pub
-    renderPubCards();
+    localStorage.setItem('selectedReviewer', reviewer);
+    selectedPub = null;
+    renderPubCards(); // re-render cards without destroying questions
   });
 });
 
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
 document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
-
-// Click away to close leaderboard
-document.getElementById('leaderboardModal').addEventListener('click', function(e){
-  if(e.target === this) this.style.display='none';
-});
+document.getElementById('leaderboardModal').addEventListener('click', e=>{ if(e.target===this) this.style.display='none'; });
 
 async function fetchData(){
   try{
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
-    // Ensure leaderboard modal is hidden by default
     document.getElementById('leaderboardModal').style.display='none';
   } catch(e){ console.error(e); }
 }
@@ -200,25 +193,28 @@ function renderPubCards(){
       card.appendChild(scoreDiv);
     }
 
-    // ONLY CHANGE: append questions AFTER renderPubCards, without re-rendering everything inside onclick
     card.onclick = ()=>{
       if(selectedPub === i){
         selectedPub = null;
+        // remove questions container
+        document.querySelectorAll('.questions-container').forEach(q=>q.remove());
       } else {
         selectedPub = i;
+        document.querySelectorAll('.questions-container').forEach(q=>q.remove());
         showQuestions(i, card);
       }
-      // Clear previous question containers
-      document.querySelectorAll('.questions-container').forEach(q=>q.remove());
-      renderPubCards();
-      if(selectedPub !== null) showQuestions(selectedPub, container.children[selectedPub]);
+      // toggle selected class
+      document.querySelectorAll('.pub-card').forEach((c,idx)=>{ 
+        if(idx===i && selectedPub!==null) c.classList.add('selected'); 
+        else c.classList.remove('selected');
+      });
     };
 
     container.appendChild(card);
   });
 }
 
-// ... rest of functions (calcReviewerScore, calcAverageScore, showQuestions, saveAnswers, showLeaderboard) remain unchanged
+// ... calcReviewerScore, calcAverageScore, showQuestions, saveAnswers, showLeaderboard remain unchanged
 
 function calcReviewerScore(pubIndex, reviewerName){
   const row = pubData.data[pubIndex];
