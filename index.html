@@ -6,10 +6,10 @@
     <style>
       body { 
         font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
-        margin: 0; 
-        background-color: #F5F5F5; 
-        overflow: hidden; 
-        height: 100vh;
+        background-color: #F5F5F5;
+        overflow: hidden;
+        height: 100%;
+        margin: 0;
       }
 
       #pubList {
@@ -37,12 +37,15 @@
         flex: 1;
         text-align: center;
         cursor: pointer;
-        z-index: 3; /* above slider */
+        z-index: 3;
         font-weight: bold;
         line-height: 40px;
-        color: #fff; /* visible text */
+        color: #000; /* default text visible */
         transition: color 0.3s;
         user-select: none;
+      }
+      input#squeak:checked + label[for="squeak"], input#connor:checked + label[for="connor"] {
+        color: #fff; /* text visible on colored slider */
       }
 
       .toggle-switch .slider {
@@ -52,7 +55,7 @@
         height: 100%;
         border-radius: 20px;
         transition: 0.3s;
-        z-index: 2; /* behind labels */
+        z-index: 2;
         background-color: #004080; 
       }
       input#connor:checked ~ .slider { background-color: #800000; left: 50%; }
@@ -68,48 +71,28 @@
       .pub-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
       .pub-card.selected { border-width: 3px; }
 
-      .pub-card.squeak { border-color: #004080; }
-      .pub-card.connor { border-color: #800000; }
+      /* Reviewer card colors */
+      .pub-card.squeak { background-color: #D0E4FF; border-color: #004080; }
+      .pub-card.connor { background-color: #FFD0D0; border-color: #800000; }
 
       .reviewed-badge {
         position: absolute; top: 8px; right: 10px; background: green;
         color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px;
       }
 
-      .score-line {
-        margin-top: 6px;
-        font-weight: 600;
-      }
+      .score-line { margin-top: 6px; font-weight: 600; }
 
       /* Questions container */
-      .questions-container { 
-        margin-top: 10px; 
-        padding: 12px 16px;
-        background: transparent; 
-        border-radius: 10px; 
-      }
+      .questions-container { margin-top: 10px; padding: 12px 16px; background: transparent; border-radius: 10px; }
 
+      /* Question styling */
       .question { margin: 12px 0; }
       .question label { display: block; margin-bottom: 6px; font-weight: 500; }
-      .question input[type=range] {
-        width: 90%; 
-        height: 8px; 
-        border-radius: 5px;
-        background: #ccc;
-        appearance: none;
-      }
-      .question input[type=range]::-webkit-slider-thumb {
-        appearance: none; width: 20px; height: 20px; border-radius: 50%;
-        background: #004080; cursor: pointer; transition: 0.3s;
-      }
+      .question input[type=range] { width: 90%; height: 8px; border-radius: 5px; background: #ccc; appearance: none; }
+      .question input[type=range]::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #004080; cursor: pointer; transition: 0.3s; }
       input:focus, textarea:focus { outline: none; box-shadow: 0 0 3px #004080; }
-      .question input[type=text], .question textarea {
-        width: 90%; box-sizing: border-box; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc;
-        font-size: 14px; transition: 0.2s; resize: vertical;
-        background: #fff;
-      }
+      .question input[type=text], .question textarea { width: 90%; box-sizing: border-box; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; transition: 0.2s; resize: vertical; background: #fff; }
       .question textarea { min-height: 72px; }
-
       .value-badge { margin-left: 10px; font-weight: 600; }
 
       .submit-btn { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; margin-top: 10px; transition: 0.2s; }
@@ -122,58 +105,20 @@
 
       /* Leaderboard styles */
       #leaderboardBtn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #333;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 56px;
-        height: 56px;
-        font-size: 22px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        cursor: pointer;
-        z-index: 1000;
-        transition: background 0.3s ease;
+        position: fixed; bottom: 20px; right: 20px;
+        background: #333; color: white; border: none; border-radius: 50%;
+        width: 56px; height: 56px; font-size: 22px; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: background 0.3s ease;
       }
       #leaderboardBtn:hover { background: #555; }
 
-      .modal-content {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        width: 90%;
-        max-width: 400px;
-        max-height: 80%;
-        overflow-y: auto;
-      }
-      .leaderboard-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin-bottom: 6px;
-        color: black;
-        font-weight: 500;
-      }
+      .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; max-height: 80%; overflow-y: auto; }
+      .leaderboard-item { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; color: black; font-weight: 500; }
       .leaderboard-item.gold { background-color: #FFD700; }
       .leaderboard-item.silver { background-color: #C0C0C0; }
       .leaderboard-item.bronze { background-color: #CD7F32; }
       .leaderboard-item.others { background-color: #eee; }
-      .modal {
-        display: none;
-        position: fixed; 
-        top: 0; left: 0; 
-        width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.4); 
-        align-items: center; 
-        justify-content: center; 
-        z-index: 1000;
-      }
+      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 1000; }
 
       @media(max-width:480px) {
         .toggle-switch { width: 160px; height: 35px; }
@@ -198,7 +143,7 @@
     <!-- Pub cards -->
     <div id="pubList"></div>
 
-    <!-- Floating Leaderboard -->
+    <!-- Leaderboard -->
     <button id="leaderboardBtn" onclick="showLeaderboard()">🏆</button>
     <div id="leaderboardModal" class="modal">
       <div class="modal-content">
@@ -210,178 +155,20 @@
 
     <script>
       const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
+      let pubData, selectedPub=null, reviewer='Squeak';
 
-      let pubData, selectedPub = null, reviewer = 'Squeak';
+      async function init(){ pubData = await fetchPubData(); renderPubCards(); }
+      async function fetchPubData(){ const resp = await fetch(WEB_APP_URL+'?action=getPubData'); return await resp.json(); }
+      async function savePubRating(pubName, reviewer, answers){ await fetch(WEB_APP_URL+'?action=savePubRating',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pubName,reviewer,answers})}); pubData = await fetchPubData(); renderPubCards(); }
 
-      async function init() {
-        pubData = await fetchPubData();
-        renderPubCards();
-      }
+      function changeReviewer(){ reviewer=document.querySelector('input[name="reviewer"]:checked').value; renderPubCards(); }
 
-      async function fetchPubData() {
-        const resp = await fetch(WEB_APP_URL + '?action=getPubData');
-        return await resp.json();
-      }
-
-      async function savePubRating(pubName, reviewer, answers) {
-        await fetch(WEB_APP_URL + '?action=savePubRating', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({pubName, reviewer, answers})
-        });
-        pubData = await fetchPubData();
-        renderPubCards();
-      }
-
-      function changeReviewer() {
-        reviewer = document.querySelector('input[name="reviewer"]:checked').value;
-        renderPubCards();
-      }
-
-      function selectPub(index) {
-        selectedPub = (selectedPub === index) ? null : index;
-        renderPubCards();
-        const card = document.querySelectorAll('.pub-card')[selectedPub];
-        if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
-      }
-
-      function calcReviewerScore(pubIndex, reviewerName) {
-        const row = pubData.data[pubIndex];
-        if(!row) return null;
-        let total=0, weightSum=0;
-        for(let i=0;i<pubData.labels.length;i++){
-          if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
-          const weight=parseFloat(pubData.weightings[i]);
-          if(!isFinite(weight) || weight<=0) continue;
-          const num=parseFloat(row[i]);
-          if(!isNaN(num)){ total+=num*weight; weightSum+=weight; }
-        }
-        return weightSum>0 ? +(total/weightSum).toFixed(2) : null;
-      }
-
-      function calcAverageScore(pubIndex){
-        const unique = Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
-        const scores = unique.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!==null && !isNaN(s));
-        if(!scores.length) return null;
-        return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
-      }
-
-      function renderPubCards(){
-        const container = document.getElementById('pubList');
-        container.innerHTML='';
-        pubData.pubs.forEach((name,index)=>{
-          const card = document.createElement('div');
-          card.className='pub-card '+reviewer.toLowerCase();
-          card.textContent=name;
-
-          const answers = pubData.data[index]||[];
-          let hasReview = answers.some((a,i)=>(pubData.reviewers[i]||'').toLowerCase()===reviewer.toLowerCase() && a!=='');
-          if(hasReview){
-            const badge = document.createElement('div');
-            badge.className='reviewed-badge'; badge.textContent='Reviewed';
-            card.appendChild(badge);
-          }
-
-          const yourScore=calcReviewerScore(index,reviewer);
-          const avgScore=calcAverageScore(index);
-          if(yourScore!==null || avgScore!==null){
-            const scoreDiv=document.createElement('div');
-            scoreDiv.className='score-line';
-            scoreDiv.textContent=(yourScore!==null?`Your Score: ${yourScore}`:'')+
-                                 (yourScore!==null && avgScore!==null?' | ':'')+
-                                 (avgScore!==null?`Avg: ${avgScore}`:'');
-            card.appendChild(scoreDiv);
-          }
-
-          card.onclick=()=>showQuestionsInside(card,index);
-          container.appendChild(card);
-        });
-      }
-
-      function showQuestionsInside(card,index){
-        selectedPub=index;
-        const container=document.createElement('div');
-        container.className='questions-container';
-        container.addEventListener('click',e=>e.stopPropagation());
-
-        const answers=pubData.data[index]||[];
-        const labels=pubData.labels;
-        const types=pubData.types;
-        const reviewers=pubData.reviewers;
-
-        labels.forEach((label,i)=>{
-          if((reviewers[i]||'').toLowerCase()!==reviewer.toLowerCase()) return;
-          const qDiv=document.createElement('div'); qDiv.className='question';
-          const qLabel=document.createElement('label'); qLabel.textContent=label; qDiv.appendChild(qLabel);
-
-          const inputType=(types[i]||'').toString().trim();
-          let input;
-
-          if(inputType.startsWith('slider')){
-            let min=1,max=5;
-            if(inputType.includes('_')){
-              const [,mm]=inputType.split('_');
-              if(mm && mm.includes('-')){
-                const parts=mm.split('-').map(Number);
-                if(isFinite(parts[0])) min=parts[0];
-                if(isFinite(parts[1])) max=parts[1];
-              }
-            }
-            input=document.createElement('input'); input.type='range';
-            input.min=min; input.max=max; input.step=1;
-            input.value=(answers[i]!=='')?answers[i]:min;
-            const valSpan=document.createElement('span'); valSpan.className='value-badge'; valSpan.textContent=input.value;
-            input.oninput=()=>valSpan.textContent=input.value;
-            qDiv.appendChild(input); qDiv.appendChild(valSpan);
-          } else if(inputType==='multi_line_text'){
-            input=document.createElement('textarea'); input.rows=4; input.value=answers[i]||''; qDiv.appendChild(input);
-          } else {
-            input=document.createElement('input'); input.type='text'; input.value=answers[i]||''; qDiv.appendChild(input);
-          }
-
-          input.dataset.index=i; container.appendChild(qDiv);
-        });
-
-        const submitBtn=document.createElement('button'); submitBtn.className='submit-btn '+reviewer.toLowerCase();
-        submitBtn.textContent='Submit'; submitBtn.onclick=async ()=>{
-          const inputs=container.querySelectorAll('input,textarea');
-          const ans=[]; inputs.forEach(inp=>{ ans[inp.dataset.index]=inp.value; });
-          await savePubRating(pubData.pubs[selectedPub], reviewer, ans);
-        };
-        container.appendChild(submitBtn);
-
-        card.innerHTML=''; card.appendChild(container); card.classList.add('selected');
-      }
-
-      function showLeaderboard(){
-        const pubsArray=pubData.pubs.map((p,i)=>({name:p,avg:calcAverageScore(i)})).filter(p=>p.avg!==null);
-        pubsArray.sort((a,b)=>b.avg-a.avg);
-        const list=document.getElementById('leaderboardList'); list.innerHTML='';
-        pubsArray.forEach((p,idx)=>{
-          const div=document.createElement('div'); div.className='leaderboard-item';
-          if(idx===0) div.classList.add('gold');
-          else if(idx===1) div.classList.add('silver');
-          else if(idx===2) div.classList.add('bronze');
-          else div.classList.add('others');
-          div.innerHTML=`<span>${idx+1}. ${p.name}</span><span>${p.avg.toFixed(2)}</span>`;
-          list.appendChild(div);
-        });
-        document.getElementById('leaderboardModal').style.display='flex';
-      }
+      function selectPub(index){ selectedPub=(selectedPub===index)?null:index; renderPubCards(); const card=document.querySelectorAll('.pub-card')[selectedPub]; if(card) card.scrollIntoView({behavior:'smooth', block:'start'}); }
 
       function closeLeaderboard(){ document.getElementById('leaderboardModal').style.display='none'; }
+      document.getElementById('leaderboardModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeLeaderboard(); });
 
-      // Click away to close
-      document.getElementById('leaderboardModal').addEventListener('click', e=>{
-        if(e.target===e.currentTarget) closeLeaderboard();
-      });
-
-      // Dynamic height
-      function adjustHeight(){
-        const h=window.innerHeight;
-        document.body.style.height=h+'px';
-        document.getElementById('pubList').style.height=h+'px';
-      }
+      function adjustHeight(){ const h=window.innerHeight; document.body.style.height=h+'px'; document.getElementById('pubList').style.height=h+'px'; }
       window.addEventListener('load',()=>{ adjustHeight(); init(); });
       window.addEventListener('resize',adjustHeight);
     </script>
