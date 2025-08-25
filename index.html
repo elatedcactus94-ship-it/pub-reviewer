@@ -231,7 +231,12 @@ function showQuestions(pubIndex, cardElement){
   const submitBtn=document.createElement('button');
   submitBtn.className='submit-btn '+reviewer.toLowerCase();
   submitBtn.textContent='Submit';
-  submitBtn.onclick = (e) => { e.stopPropagation(); saveAnswers(); };
+submitBtn.onclick = (e) => { 
+  e.preventDefault();   // prevent default button behaviour
+  e.stopPropagation();  // stop click from reaching the card
+  saveAnswers(); 
+};
+
   container.appendChild(submitBtn);
   const msg=document.createElement('div');
   msg.className='saved-message';
