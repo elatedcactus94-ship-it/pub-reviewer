@@ -43,6 +43,11 @@
     left: 52%;
   }
 
+<div id="loader" style="text-align:center; padding:50px; font-size:18px; color:#555;">
+  Loading pubs...
+</div>
+
+  
   #pubList {
     padding: 20px; box-sizing: border-box;
   }
@@ -159,12 +164,18 @@ document.querySelector('.close').onclick = ()=>{ document.getElementById('leader
 document.getElementById('leaderboardModal').addEventListener('click', e=>{ if(e.target===this) this.style.display='none'; });
 
 async function fetchData(){
+  const loader = document.getElementById('loader');
+  loader.style.display = 'block';   // show loader
+
   try{
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
   } catch(e){ console.error(e); }
+
+  loader.style.display = 'none';   // hide loader after render
 }
+
 
 function renderPubCards(){
   const container = document.getElementById('pubList');
