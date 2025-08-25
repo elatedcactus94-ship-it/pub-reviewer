@@ -264,8 +264,11 @@ function showQuestions(pubIndex, cardElement){
     container.appendChild(qDiv);
   });
 
-  const submitBtn=document.createElement('button'); submitBtn.className='submit-btn '+reviewer.toLowerCase(); submitBtn.textContent='Submit';
-  submitBtn.onclick=saveAnswers;
+  const submitBtn=document.createElement('button'); 
+  submitBtn.className='submit-btn '+reviewer.toLowerCase(); 
+  submitBtn.textContent='Submit';
+  // <-- CHANGE: stop propagation so parent card click does not fire
+  submitBtn.onclick = (e) => { e.stopPropagation(); saveAnswers(); };
   container.appendChild(submitBtn);
 
   const msg=document.createElement('div'); msg.className='saved-message'; msg.textContent='Saved ✅';
@@ -274,6 +277,7 @@ function showQuestions(pubIndex, cardElement){
   cardElement.appendChild(container);
   cardElement.classList.add('selected');
 }
+
 
 async function saveAnswers(){
   const inputs=document.querySelectorAll('.questions-container input, .questions-container textarea');
