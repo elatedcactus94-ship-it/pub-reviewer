@@ -1,173 +1,241 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nottingham Pub Ratings</title>
-<style>
-  body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; background: #F5F5F5; }
-  #pubList { padding: 20px; box-sizing: border-box; overflow-y: auto; height: calc(100vh - 80px); }
+  <meta charset="utf-8">
+  <title>Nottingham Pub Ratings</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+      margin: 20px; 
+      background-color: #F5F5F5;
+    }
 
-  /* Reviewer toggle */
-  .reviewer-toggle { margin: 20px 0; display:flex; justify-content:center; }
-  .toggle-switch { position: relative; width: 200px; height: 40px; background-color: #ddd; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; padding: 0 5px; }
-  .toggle-switch input { display: none; }
-  .toggle-switch label { flex:1; text-align:center; cursor:pointer; font-weight:bold; line-height:40px; transition: color 0.3s; }
-  input#squeak:checked + label[for="squeak"], input#connor:checked + label[for="connor"] { color:white; }
-  .toggle-switch .slider { position:absolute; top:0; left:0; width:50%; height:100%; border-radius:20px; transition:0.3s; z-index:1; background:#004080; }
-  input#connor:checked ~ .slider { background:#800000; left:50%; }
+    /* Reviewer toggle */
+    .reviewer-toggle { margin-bottom: 20px; display:flex; justify-content:center; }
+    .toggle-switch {
+      position: relative;
+      width: 200px;
+      height: 40px;
+      background-color: #ddd;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px;
+    }
+    .toggle-switch input { display: none; }
+    .toggle-switch label {
+      flex: 1;
+      text-align: center;
+      cursor: pointer;
+      z-index: 2;
+      font-weight: bold;
+      line-height: 40px;
+      color: #000;
+      transition: color 0.3s;
+    }
+    input#squeak:checked + label[for="squeak"] { color: white; }
+    input#connor:checked + label[for="connor"] { color: white; }
 
-  /* Pub cards */
-  .pub-card { border-radius:10px; padding:15px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; border:2px solid #ccc; box-shadow:0 2px 5px rgba(0,0,0,0.05); position:relative; background:#fff; }
-  .pub-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-  .pub-card.selected { border-width:3px; }
-  .pub-card.squeak { background:#D0E4FF; border-color:#004080; }
-  .pub-card.connor { background:#FFD0D0; border-color:#800000; }
-  .reviewed-badge { position:absolute; top:8px; right:10px; background:green; color:white; font-size:12px; padding:2px 6px; border-radius:10px; }
-  .score-line { margin-top:6px; font-weight:600; }
+    .toggle-switch .slider {
+      position: absolute;
+      top: 0; left: 0;
+      width: 50%;
+      height: 100%;
+      border-radius: 20px;
+      transition: 0.3s;
+      z-index: 1;
+      background-color: #004080;
+    }
+    input#connor:checked ~ .slider { background-color: #800000; left: 50%; }
 
-  /* Questions */
-  .questions-container { margin-top:10px; padding:12px 16px; border-radius:10px; background:transparent; }
-  .question { margin:12px 0; }
-  .question label { display:block; margin-bottom:6px; font-weight:500; }
-  .question input[type=range] { width:90%; height:8px; border-radius:5px; background:#ccc; }
-  .question input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20px; border-radius:50%; background:#004080; cursor:pointer; transition:0.3s; }
-  .question input[type=text], .question textarea { width:90%; padding:10px 12px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:vertical; background:#fff; }
-  .question textarea { min-height:72px; }
-  .value-badge { margin-left:10px; font-weight:600; }
-  .submit-btn { padding:10px 20px; font-size:16px; cursor:pointer; border-radius:5px; border:none; margin-top:10px; transition:0.2s; }
-  .submit-btn.squeak { background:#004080; color:white; }
-  .submit-btn.squeak:hover { background:#0066cc; }
-  .submit-btn.connor { background:#800000; color:white; }
-  .submit-btn.connor:hover { background:#b30000; }
-  .saved-message { margin-top:10px; font-weight:bold; color:green; opacity:0; transition:opacity 0.5s; }
+    /* Pub cards */
+    .pub-card { 
+      border-radius: 10px; padding: 15px; margin-bottom: 10px; 
+      cursor: pointer; transition: all 0.2s; border: 2px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .pub-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .pub-card.selected { border-width: 3px; }
 
-  /* Leaderboard */
-  #leaderboardBtn { position:fixed; bottom:20px; right:20px; background:#333; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:22px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:1000; }
-  #leaderboardBtn:hover { background:#555; }
-  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:1000; }
-  .modal-content { background:white; padding:20px; border-radius:12px; width:90%; max-width:400px; max-height:80%; overflow-y:auto; }
-  .leaderboard-item { display:flex; justify-content:space-between; padding:8px 12px; border-radius:6px; margin-bottom:6px; font-weight:500; }
-  .leaderboard-item.gold { background:#FFD700; }
-  .leaderboard-item.silver { background:#C0C0C0; }
-  .leaderboard-item.bronze { background:#CD7F32; }
-  .leaderboard-item.others { background:#eee; }
+    .pub-card.squeak { background-color: #D0E4FF; border-color: #004080; }
+    .pub-card.connor { background-color: #FFD0D0; border-color: #800000; }
 
-  @media(max-width:480px) {
-    .toggle-switch { width:160px; height:35px; }
-    .toggle-switch label { line-height:35px; font-size:14px; }
-    .pub-card { padding:12px; }
-    .submit-btn { font-size:14px; padding:8px 16px; }
-  }
-</style>
+    .reviewed-badge {
+      position: absolute; top: 8px; right: 10px; background: green;
+      color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px;
+    }
+
+    .score-line { margin-top: 6px; font-weight: 600; }
+
+    .questions-container { margin-top: 10px; padding: 12px 16px; background: transparent; border-radius: 10px; }
+
+    .question { margin: 12px 0; }
+    .question label { display: block; margin-bottom: 6px; font-weight: 500; }
+    .question input[type=range] {
+      width: 90%; height: 8px; border-radius: 5px; background: #ccc; appearance: none;
+    }
+    .question input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 20px; height: 20px; border-radius: 50%;
+      background: #004080; cursor: pointer; transition: 0.3s;
+    }
+    input:focus, textarea:focus { outline: none; box-shadow: 0 0 3px #004080; }
+    .question input[type=text], .question textarea {
+      width: 90%; box-sizing: border-box; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc;
+      font-size: 14px; transition: 0.2s; resize: vertical; background: #fff;
+    }
+    .question textarea { min-height: 72px; }
+    .value-badge { margin-left: 10px; font-weight: 600; }
+
+    .submit-btn { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; margin-top: 10px; transition: 0.2s; }
+    .submit-btn.squeak { background-color: #004080; color: white; }
+    .submit-btn.squeak:hover { background-color: #0066cc; }
+    .submit-btn.connor { background-color: #800000; color: white; }
+    .submit-btn.connor:hover { background-color: #b30000; }
+
+    .saved-message { margin-top: 10px; font-weight: bold; color: green; opacity: 0; transition: opacity 0.5s; }
+
+    @media(max-width:480px) {
+      body { margin: 10px; }
+      .toggle-switch { width: 160px; height: 35px; }
+      .toggle-switch label { line-height: 35px; font-size: 14px; }
+      .pub-card { padding: 12px; }
+      .submit-btn { font-size: 14px; padding: 8px 16px; }
+    }
+
+    /* Leaderboard */
+    #leaderboardBtn {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #333; color: white; border: none; border-radius: 50%;
+      width: 56px; height: 56px; font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000;
+      transition: background 0.3s ease;
+    }
+    #leaderboardBtn:hover { background: #555; }
+
+    .modal-content {
+      background: white; padding: 20px; border-radius: 12px;
+      width: 90%; max-width: 400px; max-height: 80%; overflow-y: auto;
+    }
+    .leaderboard-item { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; color: black; font-weight: 500; }
+    .leaderboard-item.gold { background-color: #FFD700; }
+    .leaderboard-item.silver { background-color: #C0C0C0; }
+    .leaderboard-item.bronze { background-color: #CD7F32; }
+    .leaderboard-item.others { background-color: #eee; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 1000; }
+  </style>
 </head>
 <body>
-  <div class="reviewer-toggle">
-    <div class="toggle-switch">
-      <input type="radio" id="squeak" name="reviewer" value="Squeak" checked>
-      <label for="squeak">Squeak</label>
-      <input type="radio" id="connor" name="reviewer" value="Connor">
-      <label for="connor">Connor</label>
-      <div class="slider"></div>
-    </div>
-  </div>
 
-  <div id="pubList"></div>
-
-  <!-- Leaderboard -->
-  <button id="leaderboardBtn">🏆</button>
-  <div id="leaderboardModal" class="modal">
-    <div class="modal-content">
-      <span class="close" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
-      <h2>Leaderboard</h2>
-      <div id="leaderboardList"></div>
-    </div>
+<!-- Reviewer toggle -->
+<div class="reviewer-toggle">
+  <div class="toggle-switch">
+    <input type="radio" id="squeak" name="reviewer" value="Squeak" checked onchange="changeReviewer()">
+    <label for="squeak">Squeak</label>
+    <input type="radio" id="connor" name="reviewer" value="Connor" onchange="changeReviewer()">
+    <label for="connor">Connor</label>
+    <div class="slider"></div>
   </div>
+</div>
+
+<!-- Pub cards -->
+<div id="pubList"></div>
+
+<!-- Leaderboard -->
+<button id="leaderboardBtn" onclick="showLeaderboard()">🏆</button>
+<div id="leaderboardModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeLeaderboard()" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+    <h2>Leaderboard</h2>
+    <div id="leaderboardList"></div>
+  </div>
+</div>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec";
+const webAppUrl = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
+let pubData, selectedPub = null, reviewer = 'Squeak';
 
-let pubData, reviewer='Squeak', selectedPub=null;
+// Fetch pub data
+function init() {
+  fetch(webAppUrl)
+    .then(r => r.json())
+    .then(data => { pubData = data; renderPubCards(); })
+    .catch(err => console.error('Failed to fetch pub data', err));
+}
 
-async function fetchData() {
-  const res = await fetch(`${WEB_APP_URL}?action=getJson`);
-  pubData = await res.json();
+function changeReviewer() {
+  reviewer = document.querySelector('input[name="reviewer"]:checked').value;
   renderPubCards();
 }
 
-function changeReviewer(e) {
-  reviewer = e.target.value;
+function selectPub(index) {
+  selectedPub = (selectedPub === index) ? null : index;
   renderPubCards();
 }
-
-document.querySelectorAll('input[name="reviewer"]').forEach(el=>{
-  el.addEventListener('change', changeReviewer);
-});
 
 function calcReviewerScore(pubIndex, reviewerName) {
   const row = pubData.data[pubIndex];
-  if(!row) return null;
-  let total=0, weightSum=0;
-  for(let i=0;i<pubData.labels.length;i++){
-    if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
-    const w=parseFloat(pubData.weightings[i]);
-    if(!isFinite(w)||w<=0) continue;
-    const val=row[i];
-    const num=parseFloat(val);
-    if(!isNaN(num)){ total+=num*w; weightSum+=w; }
+  if (!row) return null;
+  let total = 0, weightSum = 0;
+  for (let i = 0; i < pubData.labels.length; i++) {
+    if ((pubData.reviewers[i] || '').toLowerCase() !== reviewerName.toLowerCase()) continue;
+    const weight = parseFloat(pubData.weightings[i]);
+    if (!isFinite(weight) || weight <= 0) continue;
+    const num = parseFloat(row[i]);
+    if (!isNaN(num)) { total += num*weight; weightSum+=weight; }
   }
   if(weightSum<=0) return null;
   return +(total/weightSum).toFixed(2);
 }
 
-function calcAverageScore(pubIndex){
-  const uniqueReviewers = Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
-  const scores = uniqueReviewers.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!==null&&!isNaN(s));
+function calcAverageScore(pubIndex) {
+  const uniqueReviewers = Array.from(new Set(pubData.reviewers.map(r => (r||'').trim()).filter(Boolean)));
+  const scores = uniqueReviewers.map(r => calcReviewerScore(pubIndex,r)).filter(s=>s!==null && !isNaN(s));
   if(!scores.length) return null;
-  return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
+  return + (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
 }
 
-function renderPubCards(){
-  const container=document.getElementById('pubList');
-  container.innerHTML='';
+function renderPubCards() {
+  const container = document.getElementById('pubList');
+  container.innerHTML = '';
   pubData.pubs.forEach((pubName,index)=>{
-    const card=document.createElement('div');
-    card.className='pub-card '+reviewer.toLowerCase();
-    card.textContent=pubName;
+    const card = document.createElement('div');
+    card.className = 'pub-card ' + reviewer.toLowerCase();
+    card.textContent = pubName;
 
-    const answers=pubData.data[index]||[];
-    let hasReview=answers.some((a,i)=> (pubData.reviewers[i]||'').toLowerCase()===reviewer.toLowerCase() && a!=='' && a!==null && a!==undefined);
+    const answers = pubData.data[index] || [];
+    let hasReview = answers.some((a,i)=>(pubData.reviewers[i]||'').toLowerCase()===reviewer.toLowerCase() && a!=='');
     if(hasReview){
-      const badge=document.createElement('div');
+      const badge = document.createElement('div');
       badge.className='reviewed-badge';
       badge.textContent='Reviewed';
       card.appendChild(badge);
     }
 
-    const yourScore=calcReviewerScore(index,reviewer);
-    const avgScore=calcAverageScore(index);
-    if(yourScore!==null || avgScore!==null){
-      const scoreDiv=document.createElement('div');
+    const yourScore = calcReviewerScore(index, reviewer);
+    const avgScore = calcAverageScore(index);
+    if(yourScore!==null||avgScore!==null){
+      const scoreDiv = document.createElement('div');
       scoreDiv.className='score-line';
-      scoreDiv.textContent=(yourScore!==null?`Your Score: ${yourScore}`:'')+(yourScore!==null && avgScore!==null?' | ':'')+(avgScore!==null?`Avg: ${avgScore}`:'');
+      scoreDiv.textContent = 
+        (yourScore!==null?`Your Score: ${yourScore}`:'') +
+        (yourScore!==null && avgScore!==null?' | ':'') +
+        (avgScore!==null?`Avg: ${avgScore}`:'');
       card.appendChild(scoreDiv);
     }
 
-    card.onclick=()=>selectPub(index);
-    if(selectedPub===index) showQuestionsInside(card,index);
+    card.onclick = ()=>showQuestionsInside(card,index);
     container.appendChild(card);
   });
 }
 
-function selectPub(index){
-  selectedPub=(selectedPub===index?null:index);
-  renderPubCards();
-}
-
 function showQuestionsInside(cardElement,index){
-  const container=document.createElement('div');
+  selectedPub=index;
+  const container = document.createElement('div');
   container.className='questions-container';
-  container.addEventListener('click', e=>e.stopPropagation());
+  container.addEventListener('click',e=>e.stopPropagation());
 
   const answers=pubData.data[index]||[];
   const labels=pubData.labels;
@@ -182,12 +250,12 @@ function showQuestionsInside(cardElement,index){
     qLabel.textContent=label;
     questionDiv.appendChild(qLabel);
 
-    let inputType=(types[i]||'').toString().trim();
+    const inputType=(types[i]||'').toString().trim();
     let input;
     if(inputType.startsWith('slider')){
       let min=1,max=5;
       if(inputType.includes('_')){
-        const [,mm]=inputType.split('_');
+        const [, mm]=inputType.split('_');
         if(mm && mm.includes('-')){
           const parts=mm.split('-').map(Number);
           if(isFinite(parts[0])) min=parts[0];
@@ -196,70 +264,76 @@ function showQuestionsInside(cardElement,index){
       }
       input=document.createElement('input');
       input.type='range'; input.min=min; input.max=max; input.step=1;
-      input.value=(answers[i]!=='' && answers[i]!==null && answers[i]!==undefined)?answers[i]:min;
-      const valueDisplay=document.createElement('span'); valueDisplay.className='value-badge'; valueDisplay.textContent=input.value;
+      input.value=(answers[i]!=='undefined' && answers[i]!==null)?answers[i]:min;
+      const valueDisplay=document.createElement('span');
+      valueDisplay.className='value-badge'; valueDisplay.textContent=input.value;
       input.oninput=()=>valueDisplay.textContent=input.value;
-      questionDiv.appendChild(input); questionDiv.appendChild(valueDisplay);
-    } else if(inputType==='multi_line_text'){
-      input=document.createElement('textarea'); input.rows=4; input.value=answers[i]||''; questionDiv.appendChild(input);
-    } else{
-      input=document.createElement('input'); input.type='text'; input.value=answers[i]||''; questionDiv.appendChild(input);
+      questionDiv.appendChild(input);
+      questionDiv.appendChild(valueDisplay);
+    }else if(inputType==='multi_line_text'){
+      input=document.createElement('textarea');
+      input.rows=4; input.value=answers[i]||'';
+      questionDiv.appendChild(input);
+    }else{
+      input=document.createElement('input'); input.type='text'; input.value=answers[i]||'';
+      questionDiv.appendChild(input);
     }
     input.dataset.index=i;
     container.appendChild(questionDiv);
   });
 
   const submitBtn=document.createElement('button');
-  submitBtn.className='submit-btn '+reviewer.toLowerCase(); submitBtn.textContent='Submit';
-  submitBtn.onclick=saveAnswers; container.appendChild(submitBtn);
+  submitBtn.className='submit-btn '+reviewer.toLowerCase();
+  submitBtn.textContent='Submit';
+  submitBtn.onclick=saveAnswers;
+  container.appendChild(submitBtn);
 
-  const msg=document.createElement('div'); msg.className='saved-message'; msg.textContent='Saved ✅'; container.appendChild(msg);
-  cardElement.appendChild(container); cardElement.classList.add('selected');
+  const msg=document.createElement('div');
+  msg.className='saved-message'; msg.textContent='Saved ✅';
+  container.appendChild(msg);
+
+  cardElement.appendChild(container);
+  cardElement.classList.add('selected');
 }
 
-async function saveAnswers(){
+function saveAnswers(){
   const inputs=document.querySelectorAll('.questions-container input, .questions-container textarea');
   const answers=[];
   inputs.forEach(input=>{ answers[input.dataset.index]=input.value; });
 
-  const msg=document.querySelector('.saved-message');
-  try{
-    const res=await fetch(WEB_APP_URL, {
-      method:'POST',
-      body:JSON.stringify({ pubName: pubData.pubs[selectedPub], reviewer, answers }),
-      headers: { 'Content-Type':'application/json' }
-    });
-    const json=await res.json();
-    if(json.success){ msg.style.opacity=1; setTimeout(()=>{ msg.style.opacity=0; },1500); fetchData(); }
-  }catch(err){ console.error(err); }
+  fetch(webAppUrl,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ pubName: pubData.pubs[selectedPub], reviewer, answers })
+  }).then(r=>r.json())
+    .then(res=>{
+      const msg=document.querySelector('.saved-message');
+      msg.style.opacity=1;
+      setTimeout(()=>{ msg.style.opacity=0; renderPubCards(); },1500);
+    }).catch(err=>console.error('Save failed',err));
 }
 
-/* Leaderboard */
-const lbBtn=document.getElementById('leaderboardBtn');
-const lbModal=document.getElementById('leaderboardModal');
-lbBtn.onclick=()=>{ renderLeaderboard(); lbModal.style.display='flex'; };
-lbModal.querySelector('.close').onclick=()=>lbModal.style.display='none';
-
-function renderLeaderboard(){
-  const pubsArray=pubData.pubs.map((p,i)=>({ name:p, avg:calcAverageScore(i) })).filter(p=>p.avg!==null);
+// ---------------- LEADERBOARD ----------------
+function showLeaderboard(){
+  const pubsArray=pubData.pubs.map((p,i)=>({ name:p, avg:calcAverageScore(i) }))
+    .filter(p=>p.avg!==null);
   pubsArray.sort((a,b)=>b.avg-a.avg);
   const list=document.getElementById('leaderboardList'); list.innerHTML='';
   pubsArray.forEach((p,idx)=>{
     const div=document.createElement('div'); div.className='leaderboard-item';
-    if(idx===0) div.classList.add('gold'); else if(idx===1) div.classList.add('silver'); else if(idx===2) div.classList.add('bronze'); else div.classList.add('others');
+    if(idx===0) div.classList.add('gold');
+    else if(idx===1) div.classList.add('silver');
+    else if(idx===2) div.classList.add('bronze');
+    else div.classList.add('others');
     div.innerHTML=`<span>${idx+1}. ${p.name}</span><span>${p.avg.toFixed(2)}</span>`;
     list.appendChild(div);
   });
+  document.getElementById('leaderboardModal').style.display='flex';
 }
 
-/* Dynamic height for mobile */
-function adjustHeight(){ document.getElementById('pubList').style.height=(window.innerHeight-80)+'px'; }
-window.addEventListener('resize',adjustHeight);
+function closeLeaderboard(){ document.getElementById('leaderboardModal').style.display='none'; }
 
-window.onload=()=>{
-  adjustHeight();
-  fetchData();
-};
+window.onload=init;
 </script>
 </body>
 </html>
