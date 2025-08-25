@@ -31,16 +31,7 @@ input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
 .question input[type=text], .question textarea { width:90%; padding:10px 12px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:vertical; }
 .question textarea { min-height:72px; }
 .value-badge { margin-left:10px; font-weight:600; }
-.submit-btn {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-  border: none;
-  margin-top: 10px;
-  position: relative;   /* added */
-  z-index: 10;          /* added */
-}
+.submit-btn { padding:10px 20px; font-size:16px; cursor:pointer; border-radius:5px; border:none; margin-top:10px; }
 .submit-btn.squeak { background-color:#004080; color:white; }
 .submit-btn.connor { background-color:#800000; color:white; }
 .saved-message { margin-top:10px; font-weight:bold; color:green; opacity:0; transition:opacity 0.5s; }
@@ -99,7 +90,6 @@ document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
 document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
 
-// fix modal background click to close correctly
 document.getElementById('leaderboardModal').addEventListener('click', e => {
   if(e.target === document.getElementById('leaderboardModal')) {
     e.target.style.display = 'none';
@@ -111,7 +101,6 @@ async function fetchData(){
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
-    // removed any line touching leaderboardModal here
   } catch(e){ console.error(e); }
 }
 
@@ -231,12 +220,7 @@ function showQuestions(pubIndex, cardElement){
   const submitBtn=document.createElement('button');
   submitBtn.className='submit-btn '+reviewer.toLowerCase();
   submitBtn.textContent='Submit';
-submitBtn.onclick = (e) => { 
-  e.preventDefault();   // prevent default button behaviour
-  e.stopPropagation();  // stop click from reaching the card
-  saveAnswers(); 
-};
-
+  submitBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); saveAnswers(); };
   container.appendChild(submitBtn);
   const msg=document.createElement('div');
   msg.className='saved-message';
@@ -252,7 +236,11 @@ async function saveAnswers(){
   inputs.forEach(input=>{ answers[input.dataset.index]=input.value; });
   const msg=document.querySelector('.saved-message');
   try{
-    await fetch(`${WEB_APP_URL}?action=savePubRating`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pubName: pubData.pubs[selectedPub], reviewer, answers}) });
+    await fetch(WEB_APP_URL, {   // <-- FIXED: post directly
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pubName: pubData.pubs[selectedPub], reviewer, answers})
+    });
     msg.style.opacity=1;
     setTimeout(()=>{ msg.style.opacity=0; fetchData(); }, 1500);
   } catch(e){ console.error(e); }
