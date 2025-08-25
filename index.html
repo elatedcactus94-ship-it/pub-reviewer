@@ -163,7 +163,6 @@ async function fetchData(){
     const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
     pubData = await res.json();
     renderPubCards();
-    document.getElementById('leaderboardModal').style.display='none';
   } catch(e){ console.error(e); }
 }
 
