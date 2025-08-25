@@ -26,12 +26,21 @@
   }
   input#squeak:checked + label[for="squeak"] { color: white; }
   input#connor:checked + label[for="connor"] { color: white; }
-  .toggle-switch .slider {
-    position: absolute; top:0; left:0; width:50%; height:100%;
-    border-radius: 20px; transition: 0.3s; z-index:1;
-    background-color: #004080;
-  }
-  input#connor:checked ~ .slider { background-color:#800000; left:50%; }
+.toggle-switch .slider {
+  position: absolute;
+  top: 0; left: 0;
+  width: 48%;   /* slightly less than 50% so labels remain visible */
+  height: 100%;
+  border-radius: 20px;
+  transition: 0.3s;
+  z-index: 0;   /* send behind labels */
+  background-color: #004080;
+}
+input#connor:checked ~ .slider {
+  background-color: #800000;
+  left: 52%;   /* slightly offset to match reduced width */
+}
+
 
   #pubList {
     padding: 20px; box-sizing: border-box;
