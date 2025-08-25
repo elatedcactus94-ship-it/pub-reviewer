@@ -31,7 +31,16 @@ input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
 .question input[type=text], .question textarea { width:90%; padding:10px 12px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:vertical; }
 .question textarea { min-height:72px; }
 .value-badge { margin-left:10px; font-weight:600; }
-.submit-btn { padding:10px 20px; font-size:16px; cursor:pointer; border-radius:5px; border:none; margin-top:10px; }
+.submit-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: none;
+  margin-top: 10px;
+  position: relative;   /* added */
+  z-index: 10;          /* added */
+}
 .submit-btn.squeak { background-color:#004080; color:white; }
 .submit-btn.connor { background-color:#800000; color:white; }
 .saved-message { margin-top:10px; font-weight:bold; color:green; opacity:0; transition:opacity 0.5s; }
