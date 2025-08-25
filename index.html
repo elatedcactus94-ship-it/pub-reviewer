@@ -151,6 +151,7 @@ document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
   r.addEventListener('change', ()=>{
     reviewer = r.value;
     localStorage.setItem('selectedReviewer', reviewer); // save selection
+    selectedPub = null; // deselect any selected pub
     renderPubCards();
   });
 });
@@ -199,11 +200,25 @@ function renderPubCards(){
       card.appendChild(scoreDiv);
     }
 
-    card.onclick = ()=>{ selectedPub=(selectedPub===i?null:i); renderPubCards(); showQuestions(i, card); };
+    // ONLY CHANGE: append questions AFTER renderPubCards, without re-rendering everything inside onclick
+    card.onclick = ()=>{
+      if(selectedPub === i){
+        selectedPub = null;
+      } else {
+        selectedPub = i;
+        showQuestions(i, card);
+      }
+      // Clear previous question containers
+      document.querySelectorAll('.questions-container').forEach(q=>q.remove());
+      renderPubCards();
+      if(selectedPub !== null) showQuestions(selectedPub, container.children[selectedPub]);
+    };
 
     container.appendChild(card);
   });
 }
+
+// ... rest of functions (calcReviewerScore, calcAverageScore, showQuestions, saveAnswers, showLeaderboard) remain unchanged
 
 function calcReviewerScore(pubIndex, reviewerName){
   const row = pubData.data[pubIndex];
