@@ -1,127 +1,270 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <style>
-    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
-    .pub-card { 
-      background:#fff; 
-      margin-bottom:12px; 
-      padding:12px; 
-      border-radius:10px; 
-      box-shadow:0 2px 6px rgba(0,0,0,0.15); 
-    }
-    .pub-header { 
-      font-size:18px; 
-      font-weight:bold; 
-      cursor:pointer; 
-    }
-    .questions-container { 
-      margin-top:10px; 
-      padding:12px 16px; 
-      border-radius:10px; 
-      background-color:#fff;
-    }
-    .question { margin-bottom:12px; }
-    .submit-btn {
-      padding:10px 20px;
-      font-size:16px;
-      cursor:pointer;
-      border-radius:5px;
-      border:none;
-      margin-top:10px;
-      background:#4CAF50;
-      color:white;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nottingham Pub Ratings</title>
+<style>
+/* --- styles unchanged --- */
+body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 0; background-color: #F5F5F5; overflow-x: hidden; }
+.reviewer-toggle { margin: 20px; display:flex; justify-content:center; }
+.toggle-switch { position: relative; width: 200px; height: 40px; background-color: #ddd; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; padding: 0 5px; }
+.toggle-switch input { display: none; }
+.toggle-switch label { flex: 1; text-align: center; cursor: pointer; font-weight: bold; line-height: 40px; color: #000; transition: color 0.3s; z-index: 1; }
+input#squeak:checked + label[for="squeak"] { color: white; }
+input#connor:checked + label[for="connor"] { color: white; }
+.toggle-switch .slider { position: absolute; top: 0; left: 0; width: 48%; height: 100%; border-radius: 20px; transition: 0.3s; z-index: 0; background-color: #004080; }
+input#connor:checked ~ .slider { background-color: #800000; left: 52%; }
+#pubList { padding: 20px; box-sizing: border-box; }
+.pub-card { border-radius: 10px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; border: 2px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+.pub-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.pub-card.selected { border-width:3px; }
+.pub-card.squeak { background-color:#D0E4FF; border-color:#004080; }
+.pub-card.connor { background-color:#FFD0D0; border-color:#800000; }
+.reviewed-badge { position: absolute; top:8px; right:10px; background:green; color:white; font-size:12px; padding:2px 6px; border-radius:10px; }
+.score-line { margin-top:6px; font-weight:600; }
+.questions-container { margin-top:10px; padding:12px 16px; border-radius:10px; }
+.question { margin:12px 0; }
+.question label { display:block; margin-bottom:6px; font-weight:500; }
+.question input[type=range] { width: 90%; height: 8px; border-radius:5px; background:#ccc; appearance:none; }
+.question input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20px; border-radius:50%; background:#004080; cursor:pointer; }
+.question input[type=text], .question textarea { width:90%; padding:10px 12px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:vertical; }
+.question textarea { min-height:72px; }
+.value-badge { margin-left:10px; font-weight:600; }
+.submit-btn { padding:10px 20px; font-size:16px; cursor:pointer; border-radius:5px; border:none; margin-top:10px; }
+.submit-btn.squeak { background-color:#004080; color:white; }
+.submit-btn.connor { background-color:#800000; color:white; }
+.saved-message { margin-top:10px; font-weight:bold; color:green; opacity:0; transition:opacity 0.5s; }
+#leaderboardBtn { position: fixed; bottom:20px; right:20px; background:#333; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:22px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 6px rgba(0,0,0,0.2); cursor:pointer; z-index:1000; }
+#leaderboardBtn:hover { background:#555; }
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal-content { background:white; padding:20px; border-radius:12px; width:90%; max-width:400px; max-height:80%; overflow-y:auto; }
+.leaderboard-item { display:flex; justify-content:space-between; padding:8px 12px; border-radius:6px; margin-bottom:6px; }
+.gold { background:#FFD700; }
+.silver { background:#C0C0C0; }
+.bronze { background:#CD7F32; }
+.others { background:#eee; }
+@media(max-width:480px) { .toggle-switch { width:160px; height:35px; } .toggle-switch label { line-height:35px; font-size:14px; } .submit-btn { font-size:14px; padding:8px 16px; } }
+</style>
 </head>
 <body>
-  <h1>Pub Ratings</h1>
-  <div id="pubsContainer"></div>
 
-  <script>
-    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec";
+<div class="reviewer-toggle">
+  <div class="toggle-switch">
+    <input type="radio" id="squeak" name="reviewer" value="Squeak" checked>
+    <label for="squeak">Squeak</label>
+    <input type="radio" id="connor" name="reviewer" value="Connor">
+    <label for="connor">Connor</label>
+    <div class="slider"></div>
+  </div>
+</div>
 
-    let pubData = {};
+<div id="pubList"></div>
 
-    async function loadPubData() {
-      const res = await fetch(WEBAPP_URL + "?action=getPubData");
-      pubData = await res.json();
-      renderPubs(pubData);
+<button id="leaderboardBtn">🏆</button>
+
+<!-- leaderboard modal hidden by default -->
+<div id="leaderboardModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+    <h2>Leaderboard</h2>
+    <div id="leaderboardList"></div>
+  </div>
+</div>
+
+<script>
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
+let pubData, selectedPub=null;
+let reviewer = localStorage.getItem('selectedReviewer') || 'Squeak';
+document.getElementById(reviewer.toLowerCase()).checked = true;
+
+document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
+  r.addEventListener('change', ()=>{
+    reviewer = r.value;
+    localStorage.setItem('selectedReviewer', reviewer);
+    selectedPub = null;
+    renderPubCards();
+  });
+});
+
+document.getElementById('leaderboardBtn').onclick = showLeaderboard;
+document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
+
+document.getElementById('leaderboardModal').addEventListener('click', e => {
+  if(e.target === document.getElementById('leaderboardModal')) {
+    e.target.style.display = 'none';
+  }
+});
+
+async function fetchData(){
+  try{
+    const res = await fetch(`${WEB_APP_URL}?action=getPubData`);
+    pubData = await res.json();
+    renderPubCards();
+  } catch(e){ console.error(e); }
+}
+
+function renderPubCards(){
+  const container = document.getElementById('pubList');
+  container.innerHTML='';
+  pubData.pubs.forEach((p, i)=>{
+    const card = document.createElement('div');
+    card.className='pub-card '+reviewer.toLowerCase();
+    card.textContent=p;
+    const answers = pubData.data[i]||[];
+    let hasReview = answers.some((a,j)=>(pubData.reviewers[j]||'').toLowerCase()===reviewer.toLowerCase() && a!='' && a!=null);
+    if(hasReview){
+      const badge = document.createElement('div');
+      badge.className='reviewed-badge';
+      badge.textContent='Reviewed';
+      card.appendChild(badge);
     }
-
-    function renderPubs(data) {
-      const container = document.getElementById("pubsContainer");
-      container.innerHTML = "";
-
-      data.pubs.forEach(pubName => {
-        const card = document.createElement("div");
-        card.className = "pub-card";
-
-        const header = document.createElement("div");
-        header.className = "pub-header";
-        header.textContent = pubName;
-
-        const qContainer = document.createElement("div");
-        qContainer.className = "questions-container";
-
-        // render questions
-        data.labels.forEach((label, i) => {
-          const div = document.createElement("div");
-          div.className = "question";
-          div.innerHTML = `<label>${label}: 
-            <input type="text" data-index="${i}"></label>`;
-          qContainer.appendChild(div);
-        });
-
-        // submit button
-        const submitBtn = document.createElement("button");
-        submitBtn.className = "submit-btn";
-        submitBtn.textContent = "Submit";
-
-        // attach click handler directly
-        submitBtn.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          const answers = Array.from(qContainer.querySelectorAll("input"))
-            .map(inp => inp.value);
-
-          const payload = {
-            pubName: pubName,
-            reviewer: "You", // adjust if you want dynamic reviewer
-            answers: answers
-          };
-
-          console.log("Submitting", payload);
-
-          try {
-            const res = await fetch(WEBAPP_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            const result = await res.json();
-            console.log("Response:", result);
-            if (result.status === "success") {
-              alert("Saved!");
-            } else {
-              alert("Error: " + result.message);
-            }
-          } catch(err) {
-            console.error("Fetch error:", err);
-            alert("Failed to submit, check console");
-          }
-        });
-
-        qContainer.appendChild(submitBtn);
-        card.appendChild(header);
-        card.appendChild(qContainer);
-        container.appendChild(card);
+    const yourScore = calcReviewerScore(i, reviewer);
+    const avgScore = calcAverageScore(i);
+    if(yourScore!=null || avgScore!=null){
+      const scoreDiv=document.createElement('div');
+      scoreDiv.className='score-line';
+      scoreDiv.textContent = (yourScore!=null?`Your Score: ${yourScore}`:'')+(yourScore!=null && avgScore!=null?' | ':'')+(avgScore!=null?`Avg: ${avgScore}`:'');
+      card.appendChild(scoreDiv);
+    }
+    card.onclick = ()=>{
+      if(selectedPub === i){
+        selectedPub = null;
+        document.querySelectorAll('.questions-container').forEach(q=>q.remove());
+      } else {
+        selectedPub = i;
+        document.querySelectorAll('.questions-container').forEach(q=>q.remove());
+        showQuestions(i, card);
+      }
+      document.querySelectorAll('.pub-card').forEach((c,idx)=>{
+        if(idx===i && selectedPub!==null) c.classList.add('selected');
+        else c.classList.remove('selected');
       });
-    }
+    };
+    container.appendChild(card);
+  });
+}
 
-    loadPubData();
-  </script>
+function calcReviewerScore(pubIndex, reviewerName){
+  const row = pubData.data[pubIndex];
+  if(!row) return null;
+  let total=0, weightSum=0;
+  for(let i=0;i<pubData.labels.length;i++){
+    if((pubData.reviewers[i]||'').toLowerCase()!==reviewerName.toLowerCase()) continue;
+    const weight=parseFloat(pubData.weightings[i]);
+    if(!isFinite(weight) || weight<=0) continue;
+    const val=row[i], num=parseFloat(val);
+    if(!isNaN(num)){ total+=num*weight; weightSum+=weight; }
+  }
+  if(weightSum<=0) return null;
+  return +(total/weightSum).toFixed(2);
+}
+
+function calcAverageScore(pubIndex){
+  const uniqueReviewers=Array.from(new Set(pubData.reviewers.map(r=>(r||'').trim()).filter(Boolean)));
+  const scores=uniqueReviewers.map(r=>calcReviewerScore(pubIndex,r)).filter(s=>s!=null && !isNaN(s));
+  if(!scores.length) return null;
+  return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
+}
+
+function showQuestions(pubIndex, cardElement){
+  if(selectedPub!==pubIndex) return;
+  const container = document.createElement('div');
+  container.className='questions-container';
+  container.addEventListener('click', e=>e.stopPropagation());
+  const answers = pubData.data[pubIndex]||[];
+  pubData.labels.forEach((label,i)=>{
+    if((pubData.reviewers[i]||'').toLowerCase()!==reviewer.toLowerCase()) return;
+    const qDiv=document.createElement('div');
+    qDiv.className='question';
+    const qLabel=document.createElement('label');
+    qLabel.textContent=label;
+    qDiv.appendChild(qLabel);
+    const type=(pubData.types[i]||'').toString().trim();
+    let input;
+    if(type.startsWith('slider')){
+      let min=1,max=5;
+      if(type.includes('_')){
+        const [,mm]=type.split('_');
+        if(mm && mm.includes('-')){
+          const parts=mm.split('-').map(Number);
+          if(isFinite(parts[0])) min=parts[0];
+          if(isFinite(parts[1])) max=parts[1];
+        }
+      }
+      input=document.createElement('input');
+      input.type='range';
+      input.min=min;
+      input.max=max;
+      input.step=1;
+      input.value=answers[i]||min;
+      const valSpan=document.createElement('span');
+      valSpan.className='value-badge';
+      valSpan.textContent=input.value;
+      input.oninput=()=>{ valSpan.textContent=input.value; };
+      qDiv.appendChild(input);
+      qDiv.appendChild(valSpan);
+    } else if(type==='multi_line_text'){
+      input=document.createElement('textarea');
+      input.value=answers[i]||'';
+      qDiv.appendChild(input);
+    } else {
+      input=document.createElement('input');
+      input.type='text';
+      input.value=answers[i]||'';
+      qDiv.appendChild(input);
+    }
+    input.dataset.index=i;
+    container.appendChild(qDiv);
+  });
+  const submitBtn=document.createElement('button');
+  submitBtn.className='submit-btn '+reviewer.toLowerCase();
+  submitBtn.textContent='Submit';
+  submitBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); saveAnswers(); };
+  container.appendChild(submitBtn);
+  const msg=document.createElement('div');
+  msg.className='saved-message';
+  msg.textContent='Saved ✅';
+  container.appendChild(msg);
+  cardElement.appendChild(container);
+  cardElement.classList.add('selected');
+}
+
+async function saveAnswers(){
+  const inputs=document.querySelectorAll('.questions-container input, .questions-container textarea');
+  const answers=[];
+  inputs.forEach(input=>{ answers[input.dataset.index]=input.value; });
+  const msg=document.querySelector('.saved-message');
+  try{
+    await fetch(WEB_APP_URL, {   // <-- FIXED: post directly
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pubName: pubData.pubs[selectedPub], reviewer, answers})
+    });
+    msg.style.opacity=1;
+    setTimeout(()=>{ msg.style.opacity=0; fetchData(); }, 1500);
+  } catch(e){ console.error(e); }
+}
+
+function showLeaderboard(){
+  const pubsArray=pubData.pubs.map((p,i)=>({name:p, avg:calcAverageScore(i)})).filter(p=>p.avg!=null);
+  pubsArray.sort((a,b)=>b.avg-a.avg);
+  const list=document.getElementById('leaderboardList');
+  list.innerHTML='';
+  pubsArray.forEach((p,idx)=>{
+    const div=document.createElement('div');
+    div.className='leaderboard-item';
+    if(idx===0) div.classList.add('gold');
+    else if(idx===1) div.classList.add('silver');
+    else if(idx===2) div.classList.add('bronze');
+    else div.classList.add('others');
+    div.innerHTML=`<span>${idx+1}. ${p.name}</span><span>${p.avg.toFixed(2)}</span>`;
+    list.appendChild(div);
+  });
+  document.getElementById('leaderboardModal').style.display='flex';
+}
+
+fetchData();
+</script>
 </body>
 </html>
