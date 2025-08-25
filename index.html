@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nottingham Pub Ratings</title>
 <style>
-  /* --- all styles unchanged --- */
   body {
     font-family: 'Segoe UI', Roboto, Arial, sans-serif;
     margin: 0; padding: 0;
@@ -43,16 +42,12 @@
     left: 52%;
   }
 
-  #pubList {
-    padding: 20px; box-sizing: border-box;
-  }
+  #pubList { padding: 20px; box-sizing: border-box; }
   .pub-card {
     border-radius: 10px; padding: 15px; margin-bottom: 10px;
-    cursor: pointer; transition: all 0.2s; border: 2px solid #ccc;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
+    border: 2px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
   }
-  .pub-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-  .pub-card.selected { border-width:3px; }
+  .pub-name { cursor: pointer; font-weight: 600; }
   .pub-card.squeak { background-color:#D0E4FF; border-color:#004080; }
   .pub-card.connor { background-color:#FFD0D0; border-color:#800000; }
   .reviewed-badge {
@@ -64,7 +59,6 @@
   .questions-container {
     margin-top:10px; padding:12px 16px; border-radius:10px;
   }
-  /* Stop clicks inside questions container from triggering card click */
   .questions-container * { pointer-events:auto; }
   .question { margin:12px 0; }
   .question label { display:block; margin-bottom:6px; font-weight:500; }
@@ -141,7 +135,7 @@
 </div>
 
 <script>
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhPja-Er9ICDhwDTs_jy-u23HSLOateqttrhcQDgUYEVLBUHTfIljG2WO87P9TFZjrEA/exec';
+const WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
 
 let pubData, selectedPub=null;
 let reviewer = localStorage.getItem('selectedReviewer') || 'Squeak';
@@ -158,7 +152,7 @@ document.querySelectorAll('input[name="reviewer"]').forEach(r=>{
 
 document.getElementById('leaderboardBtn').onclick = showLeaderboard;
 document.querySelector('.close').onclick = ()=>{ document.getElementById('leaderboardModal').style.display='none'; };
-document.getElementById('leaderboardModal').addEventListener('click', e=>{ if(e.target===this) this.style.display='none'; });
+document.getElementById('leaderboardModal').addEventListener('click', function(e){ if(e.target===this) this.style.display='none'; });
 
 async function fetchData(){
   try{
@@ -175,7 +169,18 @@ function renderPubCards(){
   pubData.pubs.forEach((p,i)=>{
     const card = document.createElement('div');
     card.className='pub-card '+reviewer.toLowerCase();
-    card.textContent=p;
+
+    // Pub name clickable area
+    const pubNameDiv = document.createElement('div');
+    pubNameDiv.className = 'pub-name';
+    pubNameDiv.textContent = p;
+    pubNameDiv.onclick = (e)=>{
+      e.stopPropagation();
+      selectedPub = (selectedPub===i?null:i);
+      renderPubCards();
+      showQuestions(i, card);
+    };
+    card.appendChild(pubNameDiv);
 
     const answers = pubData.data[i]||[];
     let hasReview = answers.some((a,j)=>(pubData.reviewers[j]||'').toLowerCase()===reviewer.toLowerCase() && a!='' && a!=null);
@@ -195,23 +200,15 @@ function renderPubCards(){
       card.appendChild(scoreDiv);
     }
 
-    // Stop clicks inside questions container from triggering card click
-    card.onclick = ()=>{ 
-      if(selectedPub===i) selectedPub=null; 
-      else selectedPub=i;
-      renderPubCards();
-      showQuestions(i, card);
-    };
-
     container.appendChild(card);
   });
 }
 
 function showQuestions(pubIndex, cardElement){
   if(selectedPub!==pubIndex) return;
+  if(cardElement.querySelector('.questions-container')) return; // prevent duplicates
   const container = document.createElement('div');
   container.className='questions-container';
-  container.addEventListener('click', e=>e.stopPropagation()); // <--- critical fix
 
   const answers = pubData.data[pubIndex]||[];
   pubData.labels.forEach((label,i)=>{
@@ -234,7 +231,7 @@ function showQuestions(pubIndex, cardElement){
   });
 
   const submitBtn=document.createElement('button'); submitBtn.className='submit-btn '+reviewer.toLowerCase(); submitBtn.textContent='Submit';
-  submitBtn.addEventListener('click', e=>{ e.stopPropagation(); saveAnswers(); }); // <--- stop propagation on submit
+  submitBtn.addEventListener('click', e=>{ e.stopPropagation(); saveAnswers(); });
   container.appendChild(submitBtn);
 
   const msg=document.createElement('div'); msg.className='saved-message'; msg.textContent='Saved ✅';
